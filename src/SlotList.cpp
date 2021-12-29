@@ -151,13 +151,12 @@ void SlotList::install() {
 	/// artificial player limit
 	Hooks::patchAsm(rebase(0x43A94E + 6), &newNumSlotsChar, 1);
 	Hooks::patchAsm(rebase(0x4C14C8 + 6), &newNumSlotsChar, 1);
-	Hooks::patchAsm(rebase(0x4C14C8 + 6), &newNumSlotsChar, 1);
 
-//	Hooks::patchAsm(Utils::rebase(0x43AC3A + 1), &newNumSlotsChar, 1);
 	unsigned char jmp1[] = {0xEB, 0x18};
 	Hooks::patchAsm(rebase(0x004B6DE7), (unsigned char*)&jmp1, sizeof(jmp1));
 	unsigned char nopnop[] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
 	Hooks::patchAsm(rebase(0x4B716A), (unsigned char*)&nopnop, sizeof(nopnop));
+	Hooks::patchAsm(rebase(0x004B706F), (unsigned char*)&nopnop, sizeof(nopnop));
 
 	// name check
 	Hooks::patchAsm(rebase(0x46AA7B + 2), &newNumSlotsPlus1Char, 1);

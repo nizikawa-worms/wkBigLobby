@@ -222,9 +222,10 @@ int __fastcall SlotList::hookCloseSlot(DWORD This) {
 }
 
 bool SlotList::areExtraPlayersInRoom() {
-	for(size_t i=6; i <= 12; i++) {
-//		if(playerInfoStructs[i].present) return true;
-		if(extraInfo[i].connected) return true;
+	for(size_t i=6; i < newNumSlots; i++) {
+		auto & info = extraInfo[i];
+		debugf("i: %d connected: %d\n", i, info.connected);
+		if(info.connected) return true;
 	}
 	return false;
 }
@@ -232,7 +233,7 @@ bool SlotList::areExtraPlayersInRoom() {
 std::string SlotList::getPlayerInfoString() {
 	std::stringstream ss;
 	ss << "Status of network slots:";
-	for (size_t i=0; i < 13; i++) {
+	for (size_t i=0; i < newNumSlots; i++) {
 		auto & info = extraInfo[i];
 		if(info.connected) {
 			ss << "\n\tSlot " << i << ": " << info.nickname << " - " << (info.hasModule ? "(has module)" : "(no module)");

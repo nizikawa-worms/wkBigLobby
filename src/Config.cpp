@@ -71,7 +71,7 @@ std::string Config::getModuleStr() {
 	return "wkBigLobby";
 }
 std::string Config::getVersionStr() {
-	return "v0.2.0";
+	return "v0.2.2";
 }
 
 std::string Config::getBuildStr() {

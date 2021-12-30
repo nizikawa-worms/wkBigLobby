@@ -2,6 +2,8 @@
 #include "SlotList.h"
 #include "Debugf.h"
 #include "Hooks.h"
+#include "Utils.h"
+#include "LobbyChat.h"
 
 #include <asmjit/asmjit.h>
 using namespace asmjit;
@@ -42,8 +44,24 @@ void __declspec(naked) hookUnicast_patch1() {
 	_asm jmp hookUnicast_patch1_ret
 }
 
+
+DWORD hookCheckShouldAllowInRoom_allow_ret;
+DWORD hookCheckShouldAllowInRoom_deny_ret;
+void __declspec(naked) hookCheckShouldAllowInRoom() {
+	_asm pushad
+	_asm push ebx
+	_asm push ebp
+	_asm call SlotList::shouldAllowPlayerInRoom
+	_asm test eax,eax
+	_asm popad
+	_asm je deny
+	_asm jmp hookCheckShouldAllowInRoom_allow_ret
+	_asm deny: jmp hookCheckShouldAllowInRoom_deny_ret
+}
+
 void SlotList::install() {
 	hostStruct = (HostStruct*) rebase(0x7C0ED4);
+	playerInfoStructs = (PlayerInfo*)rebase(0x8779E4);
 
 	void (__thiscall *slot_constructor)(PlayerSlot*) = (void (__thiscall *)(PlayerSlot*)) rebase(0x58FBB0);
 	for(auto & slot : newHostSlots.slots) {
@@ -152,11 +170,21 @@ void SlotList::install() {
 	Hooks::patchAsm(rebase(0x43A94E + 6), &newNumSlotsChar, 1);
 	Hooks::patchAsm(rebase(0x4C14C8 + 6), &newNumSlotsChar, 1);
 
-	unsigned char jmp1[] = {0xEB, 0x18};
-	Hooks::patchAsm(rebase(0x004B6DE7), (unsigned char*)&jmp1, sizeof(jmp1));
+//	unsigned char jmp1[] = {0xEB, 0x18};
+//	Hooks::patchAsm(rebase(0x004B6DE7), (unsigned char*)&jmp1, sizeof(jmp1));
+	//replaced with hook
+
 	unsigned char nopnop[] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
 	Hooks::patchAsm(rebase(0x4B716A), (unsigned char*)&nopnop, sizeof(nopnop));
 	Hooks::patchAsm(rebase(0x004B706F), (unsigned char*)&nopnop, sizeof(nopnop));
+
+	// set special flag at byte 59 of client join message to signal wkBigLobby is in use
+	Hooks::patchAsm(rebase(0x043A1C6 + 4), &bigLobbyFlag, 1);
+
+	// and check it
+	hookCheckShouldAllowInRoom_allow_ret = rebase(0x4B6E01);
+	hookCheckShouldAllowInRoom_deny_ret = rebase(0x04B6DE7);
+	Hooks::hookAsm(rebase(0x4B6DE1), (DWORD)&hookCheckShouldAllowInRoom);
 
 	// name check
 	Hooks::patchAsm(rebase(0x46AA7B + 2), &newNumSlotsPlus1Char, 1);
@@ -176,4 +204,108 @@ void SlotList::install() {
 	DWORD addrEndPlayerInfo = *(DWORD*) rebase(0x4823AE + 1) - oldNumSlots * 120 + newNumSlots * 120;
 	Hooks::patchAsm(rebase(0x4823AE + 1), (unsigned char*)&addrEndPlayerInfo, 4);
 	Hooks::patchAsm(rebase(0x48239E + 4), &newNumSlotsChar, 1);
+
+	DWORD addrCloseSlot = rebase(0x590020);
+	_HookDefault(CloseSlot);
 }
+
+
+int __fastcall SlotList::hookCloseSlot(DWORD This) {
+	if(This >= (DWORD)&newHostSlots.slots && This <= (DWORD)&newHostSlots.slots + sizeof(newHostSlots.slots)) {
+		int id = (This - (DWORD)&newHostSlots.slots) / sizeof(PlayerSlot);
+		debugf("Close extra slot: 0x%X = id: %d\n", This, id);
+		extraInfo[id].reset();
+	} else {
+		debugf("Close regular slot: 0x%X\n", This);
+	}
+	return origCloseSlot(This);
+}
+
+bool SlotList::areExtraPlayersInRoom() {
+	for(size_t i=6; i <= 12; i++) {
+//		if(playerInfoStructs[i].present) return true;
+		if(extraInfo[i].connected) return true;
+	}
+	return false;
+}
+
+std::string SlotList::getPlayerInfoString() {
+	std::stringstream ss;
+	ss << "Status of network slots:";
+	for (size_t i=0; i < 13; i++) {
+		auto & info = extraInfo[i];
+		if(info.connected) {
+			ss << "\n\tSlot " << i << ": " << info.nickname << " - " << (info.hasModule ? "(has module)" : "(no module)");
+		}
+	}
+	return ss.str();
+}
+
+
+
+bool SlotList::arePlayersWithoutModuleInRoom() {
+//	for(size_t i=0; i <= 13; i++) {
+//		debugf("i: %d addr: 0x%X present: %d hasmodule: %d\n", i, &playerInfoStructs[i], playerInfoStructs[i].present, extraInfo[i].hasModule);
+//		if(playerInfoStructs[i].present && !extraInfo[i].hasModule) return true;
+//	}
+	for(auto & info : extraInfo) {
+		if(info.connected && !info.hasModule) return true;
+	}
+	return false;
+}
+
+
+
+bool __stdcall SlotList::shouldAllowPlayerInRoom(DWORD slot_offset, unsigned char * payload) {
+	int id = slot_offset / sizeof(PlayerSlot);
+	PlayerSlot * slot = &newHostSlots.slots[id];
+
+	unsigned short int * type = (unsigned short int*)payload;
+	unsigned char flag = payload[59];
+	bool hasmodule = flag & bigLobbyFlag;
+	char * nickname = (char*)&payload[2];
+	debugf("Slot: 0x%X id: %d nickname: %s payload: 0x%X type: 0x%X flag: 0x%X hasmodule: %d\n", slot, id, nickname, payload, *type, flag, hasmodule);
+	LobbyChat::sendHostGreentextMessage(std::format("{} is connecting to the lobby at slot: {} - {}", nickname, id, hasmodule ? "has wkBigLobby installed" : "does not have wkBigLobby installed"));
+
+	Utils::hexDump("Payload", payload, 128);
+
+	setConnected(id, true, nickname);
+	setModuleFlag(id, hasmodule);
+
+	bool extraPlayers = areExtraPlayersInRoom();
+	bool playersWithoutModule = arePlayersWithoutModuleInRoom();
+	debugf("extraPlayers: %d playersWithoutModule: %d\n", extraPlayers, playersWithoutModule);
+
+	if(hasmodule) {
+		if(id > 5 && playersWithoutModule) {
+			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - has module installed and there is extra space for him, but there are already players in room without module installed", nickname));
+			return false;
+		}
+		return true;
+	} else {
+		if(id <= 5) {
+			if(extraPlayers) {
+				LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - does not have module installed and there is normal space for him, but there are already extra players in room\n", nickname));
+				return false;
+			}
+			return true;
+		} else {
+			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - does not have module and there is no normal space for him\n", nickname));
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void SlotList::setModuleFlag(int id, bool hasModule) {
+	auto & info = extraInfo[id];
+	info.hasModule = hasModule;
+}
+
+void SlotList::setConnected(int id, bool connected, std::string nickname) {
+	auto & info = extraInfo[id];
+	info.connected = connected;
+	info.nickname = std::string(nickname);
+}
+

@@ -25,6 +25,7 @@ add_library(wkBigLobby SHARED
         src/Debugf.h
         src/SlotList.cpp src/SlotList.h
         src/LobbyChat.cpp src/LobbyChat.h
+        src/Utils.cpp src/Utils.h
         ${CMAKE_CURRENT_BINARY_DIR}/resource.rc
         )
 

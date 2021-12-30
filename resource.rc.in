@@ -12,12 +12,12 @@ BLOCK "StringFileInfo"
 		VALUE "Comments", ""
 		VALUE "CompanyName", "Nizikawa"
 		VALUE "FileDescription", "For you."
-		VALUE "FileVersion", "0.0.1.1"
-		VALUE "InternalName", "wkBigLobby v0.1.1"
+		VALUE "FileVersion", "0.0.2.0"
+		VALUE "InternalName", "wkBigLobby v0.2.0"
 		VALUE "LegalCopyright", "Nizikawa"
 		VALUE "OriginalFilename", "wkBigLobby.dll"
-		VALUE "ProductName", "wkBigLobby v0.1.1"
-		VALUE "ProductVersion", "0.0.1.1"
+		VALUE "ProductName", "wkBigLobby v0.2.0"
+		VALUE "ProductVersion", "0.0.2.0"
 	}
 }
 

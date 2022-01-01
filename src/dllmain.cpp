@@ -24,6 +24,7 @@ bool LockGlobalInstance(LPCTSTR MutexName)
 char LocalMutexName[MAX_PATH];
 bool LockCurrentInstance(LPCTSTR MutexName)
 {
+	if(!Config::isMutexEnabled()) return true;
 	_snprintf_s(LocalMutexName, _TRUNCATE,"P%u/%s", GetCurrentProcessId(), MutexName);
 	return LockGlobalInstance(LocalMutexName);
 }

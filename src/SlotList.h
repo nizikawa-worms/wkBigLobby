@@ -43,11 +43,17 @@
 		bool connected = false;
 		bool hasModule = false;
 		std::string nickname;
+
 		void reset() {
 			connected = false;
 			hasModule = false;
 			nickname = "";
 		}
+	};
+
+	struct HostScreen {
+		unsigned char unknown[0x43E30];
+		char playerBoxSize;
 	};
 
 #pragma pack(pop)
@@ -69,7 +75,7 @@ public:
 
 	static bool areExtraPlayersInRoom();
 	static bool arePlayersWithoutModuleInRoom();
-	static bool __stdcall shouldAllowPlayerInRoom(DWORD slot_offset, unsigned char * payload);
+	static bool __stdcall shouldAllowPlayerInRoom(HostScreen * hostScreen, DWORD slot_offset, unsigned char * payload);
 	static void setModuleFlag(int id, bool hasModule);
 	static void setConnected(int id, bool connected, std::string nickname);
 	static std::string getPlayerInfoString();

@@ -12,11 +12,13 @@ public:
 private:
 	static inline bool moduleEnabled = true;
 	static inline bool devConsoleEnabled = true;
+	static inline bool useMutex = false;
 public:
 	static void readConfig();
 	static bool isModuleEnabled();
 	static bool isDevConsoleEnabled();
 	static int waVersionCheck();
+	static bool isMutexEnabled();
 
 	static std::string getVersionStr();
 	static std::string getBuildStr();

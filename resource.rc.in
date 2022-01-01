@@ -1,7 +1,7 @@
 
 1 VERSIONINFO
-FILEVERSION 0,0,1,1
-PRODUCTVERSION 0,0,1,1
+FILEVERSION 0,0,2,3
+PRODUCTVERSION 0,0,2,3
 FILEOS 0x4
 FILETYPE 0x1
 {
@@ -12,12 +12,12 @@ BLOCK "StringFileInfo"
 		VALUE "Comments", ""
 		VALUE "CompanyName", "Nizikawa"
 		VALUE "FileDescription", "For you."
-		VALUE "FileVersion", "0.0.2.2"
-		VALUE "InternalName", "wkBigLobby v0.2.2"
+		VALUE "FileVersion", "0.0.2.3"
+		VALUE "InternalName", "wkBigLobby v0.2.3"
 		VALUE "LegalCopyright", "Nizikawa"
 		VALUE "OriginalFilename", "wkBigLobby.dll"
-		VALUE "ProductName", "wkBigLobby v0.2.2"
-		VALUE "ProductVersion", "0.0.2.2"
+		VALUE "ProductName", "wkBigLobby v0.2.3"
+		VALUE "ProductVersion", "0.0.2.3"
 	}
 }
 

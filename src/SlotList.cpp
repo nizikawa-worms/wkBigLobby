@@ -51,6 +51,7 @@ void __declspec(naked) hookCheckShouldAllowInRoom() {
 	_asm pushad
 	_asm push ebx
 	_asm push ebp
+	_asm push ecx
 	_asm call SlotList::shouldAllowPlayerInRoom
 	_asm test eax,eax
 	_asm popad
@@ -207,6 +208,9 @@ void SlotList::install() {
 
 	DWORD addrCloseSlot = rebase(0x590020);
 	_HookDefault(CloseSlot);
+
+//	DWORD dwLastProtection;
+//	VirtualProtect((void *) &hostStruct->playerSlots[3], sizeof(PlayerSlot), PAGE_NOACCESS, &dwLastProtection);
 }
 
 
@@ -257,7 +261,7 @@ bool SlotList::arePlayersWithoutModuleInRoom() {
 
 
 
-bool __stdcall SlotList::shouldAllowPlayerInRoom(DWORD slot_offset, unsigned char * payload) {
+bool __stdcall SlotList::shouldAllowPlayerInRoom(HostScreen * hostScreen, DWORD slot_offset, unsigned char * payload) {
 	int id = slot_offset / sizeof(PlayerSlot);
 	PlayerSlot * slot = &newHostSlots.slots[id];
 
@@ -276,6 +280,16 @@ bool __stdcall SlotList::shouldAllowPlayerInRoom(DWORD slot_offset, unsigned cha
 	bool extraPlayers = areExtraPlayersInRoom();
 	bool playersWithoutModule = arePlayersWithoutModuleInRoom();
 	debugf("extraPlayers: %d playersWithoutModule: %d\n", extraPlayers, playersWithoutModule);
+
+	char playersInRoom = *(char*)rebase(0x87D0DE);
+	debugf("playersInRoom: %d playerBoxSize: %d\n", playersInRoom, hostScreen->playerBoxSize);
+
+	if(hostScreen->playerBoxSize < 7) {
+		if(playersInRoom >= hostScreen->playerBoxSize) {
+			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - host has limited number of players to {:d}", nickname, hostScreen->playerBoxSize));
+			return false;
+		}
+	}
 
 	if(hasmodule) {
 		if(id > 5 && playersWithoutModule) {

@@ -12,6 +12,7 @@ void Config::readConfig() {
 	std::filesystem::path waDir = fs::path(wabuff).parent_path();
 	auto inipath = (waDir / iniFile).string();
 	moduleEnabled = GetPrivateProfileIntA("general", "EnableModule", 1, inipath.c_str());
+	useMutex = GetPrivateProfileIntA("general", "UseMutex", 0, inipath.c_str());
 	devConsoleEnabled = GetPrivateProfileIntA("debug", "EnableDevConsole", 0, inipath.c_str());
 }
 
@@ -80,4 +81,8 @@ std::string Config::getBuildStr() {
 
 std::string Config::getFullStr() {
 	return getModuleStr() + " " + getVersionStr() + " (build: " + getBuildStr() + ")";
+}
+
+bool Config::isMutexEnabled() {
+	return useMutex;
 }

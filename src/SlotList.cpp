@@ -291,6 +291,11 @@ bool __stdcall SlotList::shouldAllowPlayerInRoom(HostScreen * hostScreen, DWORD 
 		}
 	}
 
+	if(id >= newNumSlots - 1) {
+		LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - lobby is full", nickname));
+		return false;
+	}
+
 	if(hasmodule) {
 		if(id > 5 && playersWithoutModule) {
 			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - has module installed and there is extra space for him, but there are already players in room without module installed", nickname));

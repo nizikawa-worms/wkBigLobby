@@ -14,6 +14,7 @@ void Config::readConfig() {
 	moduleEnabled = GetPrivateProfileIntA("general", "EnableModule", 1, inipath.c_str());
 	useMutex = GetPrivateProfileIntA("general", "UseMutex", 0, inipath.c_str());
 	devConsoleEnabled = GetPrivateProfileIntA("debug", "EnableDevConsole", 0, inipath.c_str());
+	greentextEnabled = GetPrivateProfileIntA("general", "EnableLobbyGreentext", 1, inipath.c_str());
 }
 
 bool Config::isDevConsoleEnabled() {
@@ -72,7 +73,7 @@ std::string Config::getModuleStr() {
 	return "wkBigLobby";
 }
 std::string Config::getVersionStr() {
-	return "v0.2.4";
+	return "v0.2.5";
 }
 
 std::string Config::getBuildStr() {
@@ -85,4 +86,8 @@ std::string Config::getFullStr() {
 
 bool Config::isMutexEnabled() {
 	return useMutex;
+}
+
+bool Config::isGreentextEnabled() {
+	return greentextEnabled;
 }

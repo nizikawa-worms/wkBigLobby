@@ -203,7 +203,10 @@ void SlotList::install() {
 
 	// populating player box
 	DWORD addrEndPlayerInfo = *(DWORD*) rebase(0x4823AE + 1) - oldNumSlots * 120 + newNumSlots * 120;
+	DWORD addrEndPlayerInfo2 = *(DWORD*) rebase(0x4823A6 + 4) - oldNumSlots * 48 + newNumSlots * 48;
+
 	Hooks::patchAsm(rebase(0x4823AE + 1), (unsigned char*)&addrEndPlayerInfo, 4);
+	Hooks::patchAsm(rebase(0x4823A6 + 4), (unsigned char*)&addrEndPlayerInfo2, 4);
 	Hooks::patchAsm(rebase(0x48239E + 4), &newNumSlotsChar, 1);
 
 	DWORD addrCloseSlot = rebase(0x590020);
@@ -269,10 +272,10 @@ bool __stdcall SlotList::shouldAllowPlayerInRoom(HostScreen * hostScreen, DWORD 
 	unsigned char flag = payload[59];
 	bool hasmodule = flag & bigLobbyFlag;
 	char * nickname = (char*)&payload[2];
-	debugf("Slot: 0x%X id: %d nickname: %s payload: 0x%X type: 0x%X flag: 0x%X hasmodule: %d\n", slot, id, nickname, payload, *type, flag, hasmodule);
-	LobbyChat::sendHostGreentextMessage(std::format("{} is connecting to the lobby at slot: {} - {}", nickname, id, hasmodule ? "has wkBigLobby installed" : "does not have wkBigLobby installed"));
+//	debugf("Slot: 0x%X id: %d nickname: %s payload: 0x%X type: 0x%X flag: 0x%X hasmodule: %d\n", slot, id, nickname, payload, *type, flag, hasmodule);
+	LobbyChat::printLobby(hostScreen, std::format("{} is connecting to the lobby at slot: {} - {}", nickname, id, hasmodule ? "has wkBigLobby installed" : "does not have wkBigLobby installed"));
 
-	Utils::hexDump("Payload", payload, 128);
+//	Utils::hexDump("Payload", payload, 128);
 
 	setConnected(id, true, nickname);
 	setModuleFlag(id, hasmodule);
@@ -286,31 +289,31 @@ bool __stdcall SlotList::shouldAllowPlayerInRoom(HostScreen * hostScreen, DWORD 
 
 	if(hostScreen->playerBoxSize < 7) {
 		if(playersInRoom >= hostScreen->playerBoxSize) {
-			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - host has limited number of players to {:d}", nickname, hostScreen->playerBoxSize));
+			LobbyChat::printLobby(hostScreen, std::format("{} is not allowed in lobby - host has limited number of players to {:d}", nickname, hostScreen->playerBoxSize));
 			return false;
 		}
 	}
 
 	if(id >= newNumSlots - 1) {
-		LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - lobby is full", nickname));
+		LobbyChat::printLobby(hostScreen, std::format("{} is not allowed in lobby - lobby is full", nickname));
 		return false;
 	}
 
 	if(hasmodule) {
 		if(id > 5 && playersWithoutModule) {
-			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - has module installed and there is extra space for him, but there are already players in room without module installed", nickname));
+			LobbyChat::printLobby(hostScreen, std::format("{} is not allowed in lobby - has module installed and there is extra space for him, but there are already players in room without module installed", nickname));
 			return false;
 		}
 		return true;
 	} else {
 		if(id <= 5) {
 			if(extraPlayers) {
-				LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - does not have module installed and there is normal space for him, but there are already extra players in room\n", nickname));
+				LobbyChat::printLobby(hostScreen, std::format("{} is not allowed in lobby - does not have module installed and there is normal space for him, but there are already extra players in room\n", nickname));
 				return false;
 			}
 			return true;
 		} else {
-			LobbyChat::sendHostGreentextMessage(std::format("{} is not allowed in lobby - does not have module and there is no normal space for him\n", nickname));
+			LobbyChat::printLobby(hostScreen, std::format("{} is not allowed in lobby - does not have module and there is no normal space for him\n", nickname));
 			return false;
 		}
 	}

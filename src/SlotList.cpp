@@ -4,7 +4,7 @@
 #include "Hooks.h"
 #include "Utils.h"
 #include "LobbyChat.h"
-
+#include <Windows.h>
 #include <asmjit/asmjit.h>
 using namespace asmjit;
 

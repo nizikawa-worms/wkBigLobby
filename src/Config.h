@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include <filesystem>
+#include "version.h"
 
 class Config {
 public:
@@ -24,9 +25,11 @@ public:
 	static bool isGreentextEnabled();
 
 	static std::string getVersionStr();
+	static int getVersionInt();
 	static std::string getBuildStr();
 	static std::string getModuleStr();
 	static std::string getFullStr();
+	static std::string getGitStr();
 };
 
 

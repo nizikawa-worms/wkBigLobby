@@ -1,0 +1,90 @@
+name: MSBuild
+
+on: [push]
+
+env:
+  SOLUTION_FILE_PATH: .
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -A Win32
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Move wkBigLobby.dll to bundle
+        run: mv build/${{env.BUILD_TYPE}}/wkBigLobby.dll bundle/wkBigLobby.dll
+
+      - name: Upload wkBigLobby-release Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: wkBigLobby-release
+          path: bundle/*
+          retention-days: 10
+
+      - name: Upload wkBigLobby-pdb Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: wkBigLobby-pdb
+          path: build/${{env.BUILD_TYPE}}/wkBigLobby.pdb
+          retention-days: 10
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.ref, 'refs/tags/v')
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v2
+
+      - name: zip wkBigLobby-release.zip
+        run: 7z a wkBigLobby-release.zip ./wkBigLobby-release/*
+
+      - name: zip wkBigLobby-pdb.zip
+        run: 7z a wkBigLobby-pdb.zip ./wkBigLobby-pdb/*
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload wkBigLobby-release.zip to Release
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./wkBigLobby-release.zip
+          asset_name: wkBigLobby-release.zip
+          asset_content_type: application/zip
+
+      - name: Upload wkBigLobby-pdb.zip to Release
+        id: upload-pdb-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./wkBigLobby-pdb.zip
+          asset_name: wkBigLobby-pdb.zip
+          asset_content_type: application/zip

@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "Debugf.h"
 #include <filesystem>
+#include "git.h"
 
 namespace fs = std::filesystem;
 
@@ -70,10 +71,15 @@ int Config::waVersionCheck() {
 
 
 std::string Config::getModuleStr() {
-	return "wkBigLobby";
+	return PROJECT_NAME;
 }
+
 std::string Config::getVersionStr() {
-	return "v0.2.5";
+	return std::format("v{}.{}.{}.{}", PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH, PROJECT_VERSION_TWEAK);
+}
+
+int Config::getVersionInt() {
+	return 1000000 * PROJECT_VERSION_MAJOR + 10000 * PROJECT_VERSION_MINOR + 100 * PROJECT_VERSION_PATCH + PROJECT_VERSION_TWEAK;
 }
 
 std::string Config::getBuildStr() {
@@ -81,7 +87,11 @@ std::string Config::getBuildStr() {
 }
 
 std::string Config::getFullStr() {
-	return getModuleStr() + " " + getVersionStr() + " (build: " + getBuildStr() + ")";
+	return std::format("{} {} (build: {} {})", getModuleStr(), getVersionStr(), getBuildStr(), getGitStr());
+}
+
+std::string Config::getGitStr() {
+	return std::format("[{}@{}{}]",  GitMetadata::Branch(), GitMetadata::Describe(), GitMetadata::AnyUncommittedChanges() ? " !!" : "");
 }
 
 bool Config::isMutexEnabled() {
